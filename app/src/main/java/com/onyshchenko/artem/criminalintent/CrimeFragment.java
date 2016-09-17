@@ -20,6 +20,7 @@ import model.Crime;
 import model.CrimeLab;
 
 public class CrimeFragment extends Fragment {
+    private static final String ARG_CRIME_ID = "crime_id";
     private Crime crime;
     private EditText crimeTitleEditTxt;
     private Button crimeDateBtn;
@@ -28,7 +29,7 @@ public class CrimeFragment extends Fragment {
     @Override
     public void onCreate(Bundle saveInstatnceState) {
         super.onCreate(saveInstatnceState);
-        UUID crimeId = (UUID)getActivity().getIntent().getSerializableExtra(CrimeActivity.EXTRA_CRIME_ID);
+        UUID crimeId = (UUID)getArguments().getSerializable(ARG_CRIME_ID);
         crime = CrimeLab.get(getActivity()).getCrime(crimeId);
     }
 
@@ -39,6 +40,14 @@ public class CrimeFragment extends Fragment {
         gatherWidgets(v);
         setEventListenres();
         return v;
+    }
+
+    public static CrimeFragment newInstance(UUID id) {
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(ARG_CRIME_ID, id);
+        CrimeFragment crimeFragment = new CrimeFragment();
+        crimeFragment.setArguments(bundle);
+        return crimeFragment;
     }
 
     public void gatherWidgets(View v) {
