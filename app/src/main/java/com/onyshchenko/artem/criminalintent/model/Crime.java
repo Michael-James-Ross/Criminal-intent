@@ -1,4 +1,4 @@
-package model;
+package com.onyshchenko.artem.criminalintent.model;
 
 import java.util.Date;
 import java.util.UUID;
@@ -10,7 +10,12 @@ public class Crime {
     private boolean isSolved;
 
     public Crime() {
-        id = UUID.randomUUID();
+        this(UUID.randomUUID());
+    }
+
+    public Crime(UUID uuid) {
+        id = uuid;
+        date = new Date();
     }
 
     public UUID getId() {

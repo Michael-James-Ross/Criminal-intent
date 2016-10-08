@@ -9,31 +9,39 @@ import android.support.v4.app.FragmentManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.text.format.DateFormat;
 
 import java.util.Date;
 import java.util.UUID;
 
-import model.Crime;
-import model.CrimeLab;
+import com.onyshchenko.artem.criminalintent.model.Crime;
+import com.onyshchenko.artem.criminalintent.model.CrimeLab;
 
 public class CrimeFragment extends Fragment {
     private static final String ARG_CRIME_ID = "crime_id";
     private Crime crime;
     private EditText crimeTitleEditTxt;
     private Button crimeDateBtn;
+    private Button crimeTimeBtn;
     private CheckBox isSolvedCheckBox;
     private final String DIALOG_DATE = "dialog_date";
+    private final String DIALOG_TIME = "dialog_time";
     private final int REQUEST_DATE = 0;
+    private final int REQUEST_TIME = 1;
 
     @Override
     public void onCreate(Bundle saveInstatnceState) {
         super.onCreate(saveInstatnceState);
+        setHasOptionsMenu(true);
         UUID crimeId = (UUID)getArguments().getSerializable(ARG_CRIME_ID);
         crime = CrimeLab.get(getActivity()).getCrime(crimeId);
     }
@@ -45,6 +53,27 @@ public class CrimeFragment extends Fragment {
         gatherWidgets(v);
         setEventListenres();
         return v;
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.fragment_crime, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.menuItemDeleteCrime:
+                CrimeLab crimeLab = CrimeLab.get(getActivity());
+                crimeLab.deleteCrime(crime.getId());
+                Intent intent = new Intent(getContext(), CrimeListActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     public static CrimeFragment newInstance(UUID id) {
@@ -64,6 +93,11 @@ public class CrimeFragment extends Fragment {
         if(crimeDateBtn != null) {
             updateDate();
         }
+        crimeTimeBtn = (Button)v.findViewById(R.id.crimeTimeBtn);
+        if(crimeTimeBtn != null) {
+            updateTime();
+        }
+
         isSolvedCheckBox = (CheckBox)v.findViewById(R.id.isSolvedCheckBox);
         isSolvedCheckBox.setChecked(crime.isSolved());
     }
@@ -97,6 +131,18 @@ public class CrimeFragment extends Fragment {
             });
         }
 
+        if(crimeTimeBtn != null) {
+            crimeTimeBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    TimePickerFragment timePickerFragment = TimePickerFragment.newInstance(crime.getDate());
+                    FragmentManager fragmentManager = getFragmentManager();
+                    timePickerFragment.setTargetFragment(CrimeFragment.this, REQUEST_TIME);
+                    timePickerFragment.show(fragmentManager, DIALOG_TIME);
+                }
+            });
+        }
+
         if(crimeDateBtn != null) {
             crimeDateBtn.setOnClickListener(new View.OnClickListener(){
                 @Override
@@ -123,9 +169,28 @@ public class CrimeFragment extends Fragment {
                 updateDate();
             }
         }
+
+        if(requestCode == REQUEST_TIME) {
+            if(data != null) {
+                Date date = (Date)data.getSerializableExtra(TimePickerFragment.EXTRA_TIME);
+                crime.setDate(date);
+                updateTime();
+            }
+        }
     }
 
     private void updateDate() {
-        crimeDateBtn.setText(crime.getDate().toString());
+        crimeDateBtn.setText(new DateFormat().getLongDateFormat(getActivity()).format(crime.getDate()));
+    }
+
+    private void updateTime() {
+        crimeTimeBtn.setText(new DateFormat().getTimeFormat(getActivity()).format(crime.getDate()));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        CrimeLab.get(getContext()).updateCrime(crime);
     }
 }
